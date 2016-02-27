@@ -26,7 +26,6 @@ class Rover
 
         break if (coords.empty? or trip.empty?)
 
-        binding.pry
         results << Rover.new.trip_result(coords, trip)
       end
 
