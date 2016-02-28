@@ -1,35 +1,32 @@
 require 'pry'
+require 'active_support/core_ext/object/blank.rb'
 
 class Rover
-  SIDES = {
-    :N => 0,
-    :E => 1,
-    :S => 2,
-    :W => 3
-  }
+  SIDES = %w{N E S W}
 
   class << self
-    attr_accessor :grid_size, :results
+    attr_accessor :grid_size
 
     def set_mission
       results = []
+      lines = []
 
-      puts 'Set grid size:'
-      grid = gets.chomp
+      puts "If you don't want add any more rovers leave line blank and click Enter"
+      $stdin.each do |line|
+        break if line.chomp.blank?
 
-      self.grid_size = grid.split(' ').map(&:to_i)
-
-      puts "If you don't want add any more rovers leave line blank and click Enter two times"
-      loop do
-        coords = gets.chomp.split(' ')
-        trip = gets.chomp
-
-        break if (coords.empty? or trip.empty?)
-
-        results << Rover.new.trip_result(coords, trip)
+        lines << line.chomp
       end
 
-      results.each { |r| puts r }
+      self.grid_size = lines.shift.split(' ').map(&:to_i)
+
+      lines.each_slice(2) do |coords, trip|
+        break if coords.blank? || trip.blank?
+
+        results << Rover.new.trip_result(coords.split(' '), trip)
+      end
+
+      results
     end
   end
 
@@ -38,28 +35,26 @@ class Rover
   def trip_result(coords, trip)
     self.x_grid = coords[0].to_i
     self.y_grid = coords[1].to_i
-    self.head_side = SIDES[coords[2].to_sym]
+    self.head_side = SIDES.index(coords[2].upcase)
 
     trip.each_char do |char|
       case char
         when 'L'
-          self.head_side = 4 if self.head_side == 0
-
           self.head_side -= 1
         when 'R'
-          self.head_side = 0 if self.head_side == 4
-
           self.head_side += 1
         when 'M'
           go_ahead
       end
     end
 
-    [x_grid, y_grid, SIDES.key(head_side)].join(' ')
+    [x_grid, y_grid, SIDES[head_side % 4]].join(' ')
   end
 
+  private
+
   def go_ahead
-    case self.head_side
+    case (head_side % 4)
       when 0
         self.y_grid += 1
       when 1
